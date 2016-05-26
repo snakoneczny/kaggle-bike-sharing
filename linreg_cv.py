@@ -1,12 +1,12 @@
 from utils import *
 from sklearn.cross_validation import KFold
-from sklearn.ensemble import RandomForestRegressor
-
-# Parameters
-features = EXTENDED
+from sklearn.linear_model import LinearRegression, Ridge, SGDRegressor, Lasso
+from sklearn.preprocessing import PolynomialFeatures
 
 # Read data
-train = pd.read_csv('data/train_%s.csv' % features)
+train = pd.read_csv('data/train_extended.csv')
+
+# TODO: delete it: train = train[train.workingday == 1].reset_index(drop=True)
 
 # Get X and y
 X = train.drop(['casual', 'registered', 'count'], inplace=False, axis=1)
@@ -21,23 +21,20 @@ for train, test in skf:
     X_train, X_test = X.loc[train, :], X.loc[test, :]
     y_train, y_test = y.loc[train], y.loc[test]
 
-    # Work on subproblems
-    # y_test = y_test[X_test.workingday == 0].reset_index(drop=True).append(
-    #     y_test[X_test.workingday == 1].reset_index(drop=True), ignore_index=True)
-    # y_pred = []
-    # for workingday in xrange(2):
-    #     X_train_sub = X_train[X_train.workingday == workingday].reset_index(drop=True)
-    #     y_train_sub = y_train[X_train.workingday == workingday].reset_index(drop=True)
-    #     X_test_sub = X_test[X_test.workingday == workingday].reset_index(drop=True)
+    # Transform polynomial base functions
+    poly = PolynomialFeatures(degree=3, interaction_only=True, include_bias=True)
+    X_train = poly.fit_transform(X_train)
+    X_test = poly.transform(X_test)
 
     # Define different targets
     targets = ['casual', 'registered']
 
-    # Train
+    # Train models
     clf = {}
     for target in targets:
-        clf[target] = RandomForestRegressor(random_state=0, n_jobs=8, n_estimators=100, max_features=None,
-                                            max_depth=None, min_samples_split=1)
+        # clf[target] = Lasso(random_state=0, alpha=1.0, normalize=True, max_iter=1000, tol=0.0001, positive=False,
+        #                     selection='cyclic')
+        clf[target] = Ridge(random_state=0, alpha=1.0, normalize=True, max_iter=None, tol=0.001, solver='auto')
         clf[target].fit(X_train, y_train[target])
 
     # Predict

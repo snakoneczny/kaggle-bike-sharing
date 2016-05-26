@@ -1,35 +1,38 @@
-import sys
-
-sys.path.append('../')
 from utils import *
 import xgboost as xgb
 
 # Parameters
-engineering_type = SIMPLE
+features = EXTENDED
 
 # Read data
-train = pd.read_csv('data/train_%s.csv' % engineering_type)
-test = pd.read_csv('data/test_%s.csv' % engineering_type)
+train = pd.read_csv('data/train_%s.csv' % features)
+test = pd.read_csv('data/test_%s.csv' % features)
 
 # Get X and y
 X_train = train.drop(['casual', 'registered', 'count'], inplace=False, axis=1)
-y_train = train['count']
+y_train = train[['count', 'casual', 'registered']]
 X_test = test
 
-# XGBoost matrices
-xg_train = xgb.DMatrix(X_train, label=y_train)
-xg_test = xgb.DMatrix(X_test)
+# Define different targets
+targets = ['casual', 'registered']
 
-# Train
-param = {'objective': 'reg:linear', 'eval_metric': 'rmse', 'silent': 1, 'nthread': 4}
-n_rounds = 190
-bst = xgb.train(param, xg_train, n_rounds, [(xg_train, 'train')])
+# Work with targets
+clf = {}
+y_pred = np.zeros(X_test.shape[0])
+for target in targets:
+    # XGBoost matrices
+    xg_train = xgb.DMatrix(X_train, label=y_train[target])
+    xg_test = xgb.DMatrix(X_test)
 
-# Predict
-y_pred = bst.predict(xg_test)
+    # Train
+    param = {'silent': 1, 'nthread': 8, 'objective': 'reg:linear',
+             'eta': 0.01, 'max_depth': 10, 'min_child_weight': 2, 'colsample_bytree': 1,
+             'subsample': 0.5, 'gamma': 0, 'alpha': 2, 'lambda': 2, 'lambda_bias': 0}
+    n_rounds = 520
+    clf[target] = xgb.train(param, xg_train, n_rounds, [(xg_train, 'train')], feval=rmsle_evalerror)
 
-# Clip values lower than 0
-y_pred = y_pred.clip(min=0)
+    # Predict and clip
+    y_pred += clf[target].predict(xg_test).clip(min=0)
 
 # Write submission
-write_submission(y_pred, 'xgb_%s.csv' % engineering_type)
+write_submission(y_pred, 'submissions/xgb_%s.csv' % features)

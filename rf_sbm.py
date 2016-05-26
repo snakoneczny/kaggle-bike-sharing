@@ -1,15 +1,12 @@
-import sys
-
-sys.path.append('../')
 from utils import *
 from sklearn.ensemble import RandomForestRegressor
 
 # Parameters
-engineering_type = SIMPLE
+features = EXTENDED
 
 # Read data
-train = pd.read_csv('data/train_%s.csv' % engineering_type)
-test = pd.read_csv('data/test_%s.csv' % engineering_type)
+train = pd.read_csv('data/train_%s.csv' % features)
+test = pd.read_csv('data/test_%s.csv' % features)
 
 # Get X and y
 X_train = train.drop(['casual', 'registered', 'count'], inplace=False, axis=1)
@@ -20,7 +17,7 @@ X_test = test
 targets = ['casual', 'registered']
 clf = {}
 for target in targets:
-    clf[target] = RandomForestRegressor(random_state=0, n_jobs=16, n_estimators=200, max_features=None,
+    clf[target] = RandomForestRegressor(random_state=0, n_jobs=8, n_estimators=400, max_features=None,
                                         max_depth=None, min_samples_split=1)
     clf[target].fit(X_train, y_train[target])
 
@@ -31,4 +28,4 @@ y_pred = clf['casual'].predict(X_test) + clf['registered'].predict(X_test)
 y_pred = y_pred.clip(min=0)
 
 # Write submission
-write_submission(y_pred, 'submissions/rf_%s.csv' % engineering_type)
+write_submission(y_pred, 'submissions/rf_%s.csv' % features)
