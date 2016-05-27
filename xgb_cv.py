@@ -27,7 +27,6 @@ for train, test in skf:
     clf = {}
     y_pred = np.zeros(X_test.shape[0])
     for target in targets:
-
         # XGBoost matrices
         xg_train = xgb.DMatrix(X_train, label=y_train[target])
         xg_test = xgb.DMatrix(X_test, label=y_test[target])

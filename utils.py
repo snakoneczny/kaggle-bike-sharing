@@ -5,6 +5,7 @@ from math import sqrt
 
 SIMPLE = 'simple'
 EXTENDED = 'extended'
+NEURAL_NET = 'neuralnet'
 
 
 def rmsle(y_true, y_pred):

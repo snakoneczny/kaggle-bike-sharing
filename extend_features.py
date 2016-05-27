@@ -20,6 +20,10 @@ def add_features(data_frame):
     new_seasons = {1: 3, 2: 4, 3: 2, 4: 1}
     data_frame['season_ordered'] = data_frame.apply(lambda row: new_seasons[row['season']], axis=1)
 
+    print 'Transforming weather..'
+    new_seasons = {1: 4, 2: 3, 3: 2, 4: 1}
+    data_frame['weather_ordered'] = data_frame.apply(lambda row: new_seasons[row['weather']], axis=1)
+
     print 'Adding circular features..'
     data_frame['month_sin'] = data_frame.apply(lambda row: sin(((row['month'] - 5) % 12) / 12.0 * 2 * pi), axis=1)
     data_frame['month_cos'] = data_frame.apply(lambda row: cos(((row['month'] - 5) % 12) / 12.0 * 2 * pi), axis=1)
@@ -27,16 +31,17 @@ def add_features(data_frame):
     data_frame['day_cos'] = data_frame.apply(lambda row: cos(row['day'] / 31.0 * 2 * pi), axis=1)
     data_frame['hour_sin'] = data_frame.apply(lambda row: sin(row['hour'] / 24.0 * 2 * pi), axis=1)
     data_frame['hour_cos'] = data_frame.apply(lambda row: cos(row['hour'] / 24.0 * 2 * pi), axis=1)
-    data_frame['hour_sin'] = data_frame.apply(lambda row: sin(row['hour'] / 24.0 * 2 * pi), axis=1)
-    data_frame['hour_cos'] = data_frame.apply(lambda row: cos(row['hour'] / 24.0 * 2 * pi), axis=1)
     data_frame['season_sin'] = data_frame.apply(lambda row: sin(((row['season'] - 3) % 4) / 4.0 * 2 * pi), axis=1)
     data_frame['season_cos'] = data_frame.apply(lambda row: cos(((row['season'] - 3) % 4) / 4.0 * 2 * pi), axis=1)
     data_frame['weekday_sin'] = data_frame.apply(lambda row: sin(row['weekday'] / 7.0 * 2 * pi), axis=1)
     data_frame['weekday_cos'] = data_frame.apply(lambda row: cos(row['weekday'] / 7.0 * 2 * pi), axis=1)
 
+    print 'Humidity and wind speed..'
+    data_frame['humidity_inv'] = data_frame.apply(lambda row: 1.0 / (row['humidity'] + 1.0), axis=1)
+    data_frame['windspeed_inv'] = data_frame.apply(lambda row: 1.0 / (row['windspeed'] + 1.0), axis=1)
+
     # Drop datetime
     data_frame.drop('datetime', axis=1, inplace=True)
-
 
 # Read data
 train = pd.read_csv('data/train.csv')
@@ -47,5 +52,6 @@ add_features(train)
 add_features(test)
 
 # Save new data
-train.to_csv('data/train_extended.csv', index=False)
-test.to_csv('data/test_extended.csv', index=False)
+name = NEURAL_NET
+train.to_csv('data/train_%s.csv' % NEURAL_NET, index=False)
+test.to_csv('data/test_%s.csv' % NEURAL_NET, index=False)
