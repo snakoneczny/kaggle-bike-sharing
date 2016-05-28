@@ -7,6 +7,9 @@ SIMPLE = 'simple'
 EXTENDED = 'extended'
 NEURAL_NET = 'neuralnet'
 
+CASUAL = 'casual'
+REGISTERED = 'registered'
+COUNT = 'count'
 
 def rmsle(y_true, y_pred):
     return sqrt(mean_squared_error(np.log(y_true + 1), np.log(y_pred + 1)))
@@ -18,7 +21,7 @@ def write_submission(y_pred, file_name):
     submission.to_csv(file_name, index=False)
 
 
-def lse_obj(preds, dtrain):
+def sle_obj(preds, dtrain):
     labels = dtrain.get_label()
     grad = 2 * np.divide(np.log(preds + 1) - np.log(labels + 1), preds + 1)
     hess = 2 * np.divide(1 - np.log(preds + 1) + np.log(labels + 1), np.power(preds + 1, 2))

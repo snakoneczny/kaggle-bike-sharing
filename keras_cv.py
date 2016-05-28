@@ -5,7 +5,7 @@ from sklearn import preprocessing
 np.random.seed(1227)
 
 from keras.models import Sequential
-from keras.layers import Dense, Activation, Dropout, ActivityRegularization, BatchNormalization
+from keras.layers import Dense, Activation, Dropout, ActivityRegularization
 from keras.callbacks import EarlyStopping
 from keras.optimizers import RMSprop
 from keras.regularizers import l2, activity_l2, l1
@@ -23,6 +23,10 @@ X = train.drop(['casual', 'registered', 'count',
                 ], inplace=False, axis=1)
 y = train[['casual', 'registered', 'count']]
 
+# Define different targets
+targets = [CASUAL, REGISTERED]
+y_pred_all = {CASUAL: np.zeros(y.shape[0]), REGISTERED: np.zeros(y.shape[0])}
+
 # CV
 n_folds = 10
 rmsle_fold = np.zeros(n_folds)
@@ -36,10 +40,6 @@ for train, test in skf:
     scaler = preprocessing.StandardScaler()
     X_train = scaler.fit_transform(X_train)
     X_test = scaler.transform(X_test)
-
-    # Define different targets
-    # targets = ['count']
-    targets = ['casual', 'registered']
 
     # Work with targets
     y_pred = np.zeros(X_test.shape[0])
@@ -66,7 +66,11 @@ for train, test in skf:
                             nb_epoch=160, batch_size=16)
 
         # Predict, reshape and clip values
-        y_pred += model.predict(X_test).reshape(X_test.shape[0]).clip(min=0)
+        y_pred_target = model.predict(X_test).reshape(X_test.shape[0]).clip(min=0)
+        y_pred += y_pred_target
+
+        # Save predictions
+        y_pred_all[target][test] = y_pred_target
 
     # Evaluate
     rmsle_fold[i] = rmsle(y_test['count'], y_pred)
@@ -75,3 +79,9 @@ for train, test in skf:
 
 # Show results
 print 'RMSLE mean = %f, ' % rmsle_fold.mean()
+
+# Write cross validation results
+date = pd.read_csv('data/train.csv')['datetime']
+submission = pd.DataFrame(
+    data={'datetime': date, CASUAL: y_pred_all[CASUAL], REGISTERED: y_pred_all[REGISTERED]})
+submission.to_csv('cross-validation/keras_%s.csv' % features, index=False)

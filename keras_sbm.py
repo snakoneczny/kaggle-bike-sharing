@@ -5,8 +5,6 @@ np.random.seed(1227)
 
 from keras.models import Sequential
 from keras.layers import Dense, Activation, Dropout
-from keras.callbacks import EarlyStopping
-from keras.regularizers import l2, activity_l2, l1
 
 # Parameters
 features = NEURAL_NET

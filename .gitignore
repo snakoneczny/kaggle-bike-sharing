@@ -1,6 +1,7 @@
 # Data
 data/
 submissions/
+cross-validation/
 
 # Pycharm
 .idea/
