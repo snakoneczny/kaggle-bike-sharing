@@ -36,9 +36,9 @@ def add_features(data_frame):
     data_frame['weekday_sin'] = data_frame.apply(lambda row: sin(row['weekday'] / 7.0 * 2 * pi), axis=1)
     data_frame['weekday_cos'] = data_frame.apply(lambda row: cos(row['weekday'] / 7.0 * 2 * pi), axis=1)
 
-    print 'Humidity and wind speed..'
-    data_frame['humidity_inv'] = data_frame.apply(lambda row: 1.0 / (row['humidity'] + 1.0), axis=1)
-    data_frame['windspeed_inv'] = data_frame.apply(lambda row: 1.0 / (row['windspeed'] + 1.0), axis=1)
+    # print 'Humidity and wind speed..'
+    # data_frame['humidity_inv'] = data_frame.apply(lambda row: 1.0 / (row['humidity'] + 1.0), axis=1)
+    # data_frame['windspeed_inv'] = data_frame.apply(lambda row: 1.0 / (row['windspeed'] + 1.0), axis=1)
 
     # Drop datetime
     data_frame.drop('datetime', axis=1, inplace=True)
@@ -52,6 +52,6 @@ add_features(train)
 add_features(test)
 
 # Save new data
-name = NEURAL_NET
-train.to_csv('data/train_%s.csv' % NEURAL_NET, index=False)
-test.to_csv('data/test_%s.csv' % NEURAL_NET, index=False)
+name = EXTENDED
+train.to_csv('data/train_%s.csv' % name, index=False)
+test.to_csv('data/test_%s.csv' % name, index=False)

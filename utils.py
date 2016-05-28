@@ -11,6 +11,7 @@ CASUAL = 'casual'
 REGISTERED = 'registered'
 COUNT = 'count'
 
+
 def rmsle(y_true, y_pred):
     return sqrt(mean_squared_error(np.log(y_true + 1), np.log(y_pred + 1)))
 
