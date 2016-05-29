@@ -48,12 +48,12 @@ for target in targets:
     model.compile(loss='mean_squared_logarithmic_error', optimizer='rmsprop')
 
     # Train
-    history = model.fit(X_train, y_train_target, shuffle=True, nb_epoch=50, batch_size=16)
+    model.fit(X_train, y_train_target, shuffle=True, nb_epoch=50, batch_size=16)
 
     # Predict, reshape and clip values
     y_pred[target] = model.predict(X_test).reshape(X_test.shape[0]).clip(min=0)
     y_pred[COUNT] += y_pred[target]
 
 # Write submission
-write_submission(y_pred, 'submissions/keras_%s.csv' % features)
-write_submission_stacking(y_pred, 'submissions/keras_%s_stacking.csv' % features)
+write_results(y_pred, 'submissions/keras_%s.csv' % features, 'data/test.csv')
+write_results_extended(y_pred, 'submissions/keras_%s_stacking.csv' % features, 'data/test.csv')

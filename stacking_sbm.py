@@ -52,4 +52,4 @@ for target in targets:
     y_pred[COUNT] += y_pred[target]
 
 # Write submission
-write_submission(y_pred, 'submissions/stacking_xgb_%s.csv' % features)
+write_results(y_pred, 'submissions/stacking_xgb_%s.csv' % features)

@@ -1,6 +1,5 @@
 import pandas as pd
 
-
 # Read submissions
 rf_sbm = pd.read_csv('submissions/rf_extended.csv')
 xgb_sbm = pd.read_csv('submissions/xgb_extended.csv')

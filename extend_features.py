@@ -2,6 +2,8 @@ from utils import *
 from datetime import datetime
 from math import pi, sin, cos
 
+features_name = NEURAL_NET
+
 
 def add_features(data_frame):
     print 'Adding date..'
@@ -36,12 +38,13 @@ def add_features(data_frame):
     data_frame['weekday_sin'] = data_frame.apply(lambda row: sin(row['weekday'] / 7.0 * 2 * pi), axis=1)
     data_frame['weekday_cos'] = data_frame.apply(lambda row: cos(row['weekday'] / 7.0 * 2 * pi), axis=1)
 
-    # print 'Humidity and wind speed..'
-    # data_frame['humidity_inv'] = data_frame.apply(lambda row: 1.0 / (row['humidity'] + 1.0), axis=1)
-    # data_frame['windspeed_inv'] = data_frame.apply(lambda row: 1.0 / (row['windspeed'] + 1.0), axis=1)
+    print 'Reversing humidity and wind speed..'
+    data_frame['humidity_inv'] = data_frame.apply(lambda row: 1.0 / (row['humidity'] + 1.0), axis=1)
+    data_frame['windspeed_inv'] = data_frame.apply(lambda row: 1.0 / (row['windspeed'] + 1.0), axis=1)
 
-    # Drop datetime
+    # Drop datetime which is not needed as a feature
     data_frame.drop('datetime', axis=1, inplace=True)
+
 
 # Read data
 train = pd.read_csv('data/train.csv')
@@ -52,6 +55,5 @@ add_features(train)
 add_features(test)
 
 # Save new data
-name = EXTENDED
-train.to_csv('data/train_%s.csv' % name, index=False)
-test.to_csv('data/test_%s.csv' % name, index=False)
+train.to_csv('data/train_%s.csv' % features_name, index=False)
+test.to_csv('data/test_%s.csv' % features_name, index=False)

@@ -16,22 +16,22 @@ def rmsle(y_true, y_pred):
     return sqrt(mean_squared_error(np.log(y_true + 1), np.log(y_pred + 1)))
 
 
-def write_submission(y_pred, file_name):
+def write_results(y_pred, results_file, date_file):
     # Read date
-    date = pd.read_csv('data/test.csv')['datetime']
+    date = pd.read_csv(date_file)['datetime']
     # Write Kaggle submission
     submission = pd.DataFrame(
         data={'datetime': date, COUNT: y_pred[COUNT]})
-    submission.to_csv(file_name, index=False)
+    submission.to_csv(results_file, index=False)
 
 
-def write_submission_stacking(y_pred, file_name):
+def write_results_extended(y_pred, results_file, date_file):
     # Read date
-    date = pd.read_csv('data/test.csv')['datetime']
-    # Write stacking submissions
+    date = pd.read_csv(date_file)['datetime']
+    # Write submission with extended stacking information
     submission = pd.DataFrame(
         data={'datetime': date, COUNT: y_pred[COUNT], CASUAL: y_pred[CASUAL], REGISTERED: y_pred[REGISTERED]})
-    submission.to_csv(file_name, index=False)
+    submission.to_csv(results_file, index=False)
 
 
 def sle_obj(preds, dtrain):

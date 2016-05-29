@@ -5,10 +5,8 @@ from sklearn import preprocessing
 np.random.seed(1227)
 
 from keras.models import Sequential
-from keras.layers import Dense, Activation, Dropout, ActivityRegularization
+from keras.layers import Dense, Activation, Dropout
 from keras.callbacks import EarlyStopping
-from keras.optimizers import RMSprop
-from keras.regularizers import l2, activity_l2, l1
 
 # Parameters
 features = NEURAL_NET
@@ -18,12 +16,12 @@ train = pd.read_csv('data/train_%s.csv' % features)
 
 # Get X and y
 X = train.drop(['casual', 'registered', 'count',
-                'month', 'day', 'season', 'weekday',  # 'season_ordered', 'hour',
+                'month', 'day', 'season', 'weekday',
                 'weather', 'humidity_inv', 'windspeed_inv',
                 ], inplace=False, axis=1)
-y = train[['casual', 'registered', 'count']]
+y = train[[CASUAL, REGISTERED, COUNT]]
 
-# Define different targets
+# Define targets
 targets = [CASUAL, REGISTERED]
 y_pred_all = {CASUAL: np.zeros(y.shape[0]), REGISTERED: np.zeros(y.shape[0])}
 
@@ -53,7 +51,7 @@ for train, test in skf:
         model.add(Dense(200, input_dim=X_train.shape[1]))
         model.add(Activation('relu'))
         model.add(Dropout(0.1))
-        model.add(Dense(200))  # , W_regularizer=l2(0.1)))#, activity_regularizer=activity_l2(0.01)))
+        model.add(Dense(200))
         model.add(Activation('relu'))
         model.add(Dropout(0.1))
         model.add(Dense(1))
@@ -61,9 +59,8 @@ for train, test in skf:
 
         # Train
         early_stopping = EarlyStopping(monitor='val_loss', patience=8, verbose=0)
-        history = model.fit(X_train, y_train_target, validation_data=(X_test, y_test_target), shuffle=True,
-                            callbacks=[early_stopping],
-                            nb_epoch=160, batch_size=16)
+        model.fit(X_train, y_train_target, validation_data=(X_test, y_test_target), shuffle=True,
+                  callbacks=[early_stopping], nb_epoch=160, batch_size=16)
 
         # Predict, reshape and clip values
         y_pred_target = model.predict(X_test).reshape(X_test.shape[0]).clip(min=0)
@@ -81,7 +78,4 @@ for train, test in skf:
 print 'RMSLE mean = %f, ' % rmsle_fold.mean()
 
 # Write cross validation results
-date = pd.read_csv('data/train.csv')['datetime']
-cv_results = pd.DataFrame(
-    data={'datetime': date, CASUAL: y_pred_all[CASUAL], REGISTERED: y_pred_all[REGISTERED]})
-cv_results.to_csv('cross-validation/keras_%s.csv' % features, index=False)
+write_results_extended(y_pred_all, 'cross-validation/keras_%s.csv' % features, 'data/train.csv')
