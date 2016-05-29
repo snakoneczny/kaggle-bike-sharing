@@ -49,12 +49,9 @@ for train, test in skf:
         xg_test = xgb.DMatrix(X_test_target, label=y_test[target])
 
         # Train
-        # param = {'silent': 1, 'nthread': 8, 'objective': 'reg:linear',
-        #          'eta': 0.01, 'max_depth': 10, 'min_child_weight': 2, 'colsample_bytree': 1,
-        #          'subsample': 0.5, 'gamma': 0, 'alpha': 2, 'lambda': 2, 'lambda_bias': 0}
         param = {'silent': 1, 'nthread': 8, 'objective': 'reg:linear',
                  'eta': 0.01, 'max_depth': 10, 'min_child_weight': 1, 'colsample_bytree': 1,
-                 'subsample': 0.75, 'gamma': 0, 'alpha': 2, 'lambda': 2, 'lambda_bias': 0}
+                 'subsample': 0.75, 'gamma': 0, 'alpha': 12, 'lambda': 12, 'lambda_bias': 0}
         n_rounds = 2000
         model[target] = xgb.train(param, xg_train, n_rounds, [(xg_train, 'train'), (xg_test, 'test')],
                                   feval=rmsle_evalerror, early_stopping_rounds=60)
@@ -69,7 +66,7 @@ for train, test in skf:
     # Evaluate
     rmsle_fold[i] = rmsle(y_test['count'], y_pred)
     print 'Fold %d/%d, RMSLE = %f, best it. = %d, %d' % (
-        i + 1, n_folds, rmsle_fold[i], model[CASUAL].best_iteration, model[REGISTERED].best_iteration)
+        i + 1, n_folds, rmsle_fold[i], best_round[CASUAL][i], best_round[REGISTERED][i])
     i += 1
 
 # Show results

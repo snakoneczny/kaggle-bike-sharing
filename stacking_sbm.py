@@ -17,7 +17,7 @@ y_train = train[[COUNT, CASUAL, REGISTERED]]
 targets = [CASUAL, REGISTERED]
 y_pred = {COUNT: np.zeros(X_test.shape[0]), CASUAL: np.zeros(X_test.shape[0]),
           REGISTERED: np.zeros(X_test.shape[0])}
-n_rounds = {CASUAL: 260, REGISTERED: 350}
+n_rounds = {CASUAL: 270, REGISTERED: 350}
 
 # Read predictions from previous models
 models = ['rf_extended', 'xgb_extended', 'keras_neuralnet']
@@ -44,7 +44,7 @@ for target in targets:
     # Train
     param = {'silent': 1, 'nthread': 8, 'objective': 'reg:linear',
              'eta': 0.01, 'max_depth': 10, 'min_child_weight': 2, 'colsample_bytree': 1,
-             'subsample': 0.5, 'gamma': 0, 'alpha': 2, 'lambda': 2, 'lambda_bias': 0}
+             'subsample': 0.5, 'gamma': 0, 'alpha': 12, 'lambda': 12, 'lambda_bias': 0}
     model = xgb.train(param, xg_train, n_rounds[target], [(xg_train, 'train')], feval=rmsle_evalerror)
 
     # Predict and clip

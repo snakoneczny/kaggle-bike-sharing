@@ -30,7 +30,7 @@ def write_results_extended(y_pred, results_file, date_file):
     date = pd.read_csv(date_file)['datetime']
     # Write submission with extended stacking information
     submission = pd.DataFrame(
-        data={'datetime': date, COUNT: y_pred[COUNT], CASUAL: y_pred[CASUAL], REGISTERED: y_pred[REGISTERED]})
+        data={'datetime': date, CASUAL: y_pred[CASUAL], REGISTERED: y_pred[REGISTERED]})
     submission.to_csv(results_file, index=False)
 
 
