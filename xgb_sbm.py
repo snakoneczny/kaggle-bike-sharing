@@ -37,3 +37,4 @@ for target in targets:
 
 # Write submission
 write_submission(y_pred, 'submissions/xgb_%s.csv' % features)
+write_submission_stacking(y_pred, 'submissions/xgb_%s_stacking.csv' % features)

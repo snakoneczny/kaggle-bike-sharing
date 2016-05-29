@@ -21,18 +21,18 @@ X_train = train.drop(['casual', 'registered', 'count',
 X_test = test.drop(['month', 'day', 'season', 'weekday',
                     'weather', 'humidity_inv', 'windspeed_inv',
                     ], inplace=False, axis=1)
-y_train = train[['casual', 'registered']]
+y_train = train[[CASUAL, REGISTERED]]
 
 # Scale data
 scaler = preprocessing.StandardScaler()
 X_train = scaler.fit_transform(X_train)
 X_test = scaler.transform(X_test)
 
-# Define different targets
-targets = ['casual', 'registered']
+# Define targets
+targets = [CASUAL, REGISTERED]
+y_pred = {COUNT: np.zeros(X_test.shape[0]), CASUAL: np.zeros(X_test.shape[0]), REGISTERED: np.zeros(X_test.shape[0])}
 
 # Work with targets
-y_pred = np.zeros(X_test.shape[0])
 for target in targets:
     y_train_target = y_train[target].as_matrix()
 
@@ -51,7 +51,9 @@ for target in targets:
     history = model.fit(X_train, y_train_target, shuffle=True, nb_epoch=50, batch_size=16)
 
     # Predict, reshape and clip values
-    y_pred += model.predict(X_test).reshape(X_test.shape[0]).clip(min=0)
+    y_pred[target] = model.predict(X_test).reshape(X_test.shape[0]).clip(min=0)
+    y_pred[COUNT] += y_pred[target]
 
 # Write submission
 write_submission(y_pred, 'submissions/keras_%s.csv' % features)
+write_submission_stacking(y_pred, 'submissions/keras_%s_stacking.csv' % features)

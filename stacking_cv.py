@@ -7,6 +7,7 @@ np.random.seed(1227)
 from keras.models import Sequential
 from keras.layers import Dense, Activation, Dropout, ActivityRegularization
 from keras.callbacks import EarlyStopping
+from keras.regularizers import l2, activity_l2, l1
 
 # Parameters
 features = NEURAL_NET
@@ -19,7 +20,7 @@ X = train.drop(['casual', 'registered', 'count',
                 'month', 'day', 'season', 'weekday',  # 'season_ordered', 'hour',
                 'weather', 'humidity_inv', 'windspeed_inv',
                 ], inplace=False, axis=1)
-y = train[['casual', 'registered', 'count']]
+y = train[[CASUAL, REGISTERED, COUNT]]
 
 # Define different targets
 targets = [CASUAL, REGISTERED]
@@ -51,8 +52,6 @@ for train, test in skf:
         for model in models:
             X_train_target[(model, target)] = stacking_train[(model, target)]
             X_test_target[(model, target)] = stacking_test[(model, target)]
-        y_train_target = y_train[target].as_matrix()
-        y_test_target = y_test[target].as_matrix()
 
         # Scale data
         scaler = preprocessing.StandardScaler()
@@ -64,7 +63,7 @@ for train, test in skf:
         model.add(Dense(200, input_dim=X_train_target.shape[1]))
         model.add(Activation('relu'))
         model.add(Dropout(0.1))
-        model.add(Dense(200))  # , W_regularizer=l2(0.1)))#, activity_regularizer=activity_l2(0.01)))
+        model.add(Dense(200))  # , W_regularizer=l2(0.0001), activity_regularizer=activity_l2(0.01)))
         model.add(Activation('relu'))
         model.add(Dropout(0.1))
         model.add(Dense(1))
@@ -72,7 +71,7 @@ for train, test in skf:
 
         # Train
         early_stopping = EarlyStopping(monitor='val_loss', patience=8, verbose=0)
-        history = model.fit(X_train_target, y_train_target, validation_data=(X_test_target, y_test_target),
+        history = model.fit(X_train_target, y_train[target], validation_data=(X_test_target, y_test[target]),
                             shuffle=True, callbacks=[early_stopping], nb_epoch=160, batch_size=16)
 
         # Predict, reshape and clip values
