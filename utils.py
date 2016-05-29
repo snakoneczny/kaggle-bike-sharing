@@ -18,8 +18,9 @@ def rmsle(y_true, y_pred):
 
 def write_submission(y_pred, file_name):
     date = pd.read_csv('data/test.csv')['datetime']
-    submission = pd.DataFrame(data={'datetime': date, 'count': y_pred})
-    submission.to_csv(file_name, index=False)
+    submissions = pd.DataFrame(
+        data={'datetime': date, COUNT: y_pred[COUNT], CASUAL: y_pred[CASUAL], REGISTERED: y_pred[REGISTERED]})
+    submissions.to_csv(file_name, index=False)
 
 
 def sle_obj(preds, dtrain):

@@ -9,17 +9,17 @@ train = pd.read_csv('data/train_%s.csv' % features)
 test = pd.read_csv('data/test_%s.csv' % features)
 
 # Get X and y
-X_train = train.drop(['casual', 'registered', 'count'], inplace=False, axis=1)
-y_train = train[['count', 'casual', 'registered']]
+X_train = train.drop([COUNT, CASUAL, REGISTERED], inplace=False, axis=1)
+y_train = train[[COUNT, CASUAL, REGISTERED]]
 X_test = test
 
-# Define different targets
-targets = ['casual', 'registered']
-n_rounds = {CASUAL: 480, REGISTERED: 660}
+# Define targets
+targets = [CASUAL, REGISTERED]
+y_pred = {COUNT: np.zeros(X_test.shape[0]), CASUAL: np.zeros(X_test.shape[0]), REGISTERED: np.zeros(X_test.shape[0])}
+n_rounds = {CASUAL: 480, REGISTERED: 500}
 
 # Work with targets
 clf = {}
-y_pred = np.zeros(X_test.shape[0])
 for target in targets:
     # XGBoost matrices
     xg_train = xgb.DMatrix(X_train.as_matrix(), label=y_train[target].as_matrix())
@@ -31,8 +31,9 @@ for target in targets:
              'subsample': 0.5, 'gamma': 0, 'alpha': 2, 'lambda': 2, 'lambda_bias': 0}
     clf[target] = xgb.train(param, xg_train, n_rounds[target], [(xg_train, 'train')], feval=rmsle_evalerror)
 
-    # Predict and clip
-    y_pred += clf[target].predict(xg_test).clip(min=0)
+    # Predict and clip values lower than 0
+    y_pred[target] = clf[target].predict(xg_test).clip(min=0)
+    y_pred[COUNT] += y_pred[target]
 
 # Write submission
 write_submission(y_pred, 'submissions/xgb_%s.csv' % features)

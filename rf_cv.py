@@ -50,6 +50,6 @@ print 'mean RMSLE = %f' % rmsle_mean
 
 # Write cross validation results
 date = pd.read_csv('data/train.csv')['datetime']
-submission = pd.DataFrame(
+cv_results = pd.DataFrame(
     data={'datetime': date, CASUAL: y_pred_all[CASUAL], REGISTERED: y_pred_all[REGISTERED]})
-submission.to_csv('cross-validation/rf_%s.csv' % features, index=False)
+cv_results.to_csv('cross-validation/rf_%s.csv' % features, index=False)
