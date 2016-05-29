@@ -88,9 +88,3 @@ for train, test in skf:
 
 # Show results
 print 'RMSLE mean = %f, ' % rmsle_fold.mean()
-
-# Write cross validation results
-date = pd.read_csv('data/train.csv')['datetime']
-submission = pd.DataFrame(
-    data={'datetime': date, CASUAL: y_pred_all[CASUAL], REGISTERED: y_pred_all[REGISTERED]})
-submission.to_csv('cross-validation/keras_%s.csv' % features, index=False)
