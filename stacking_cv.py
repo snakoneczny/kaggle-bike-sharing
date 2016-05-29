@@ -1,42 +1,33 @@
 from utils import *
 from sklearn.cross_validation import KFold
-from sklearn import preprocessing
-
-np.random.seed(1227)
-
-from keras.models import Sequential
-from keras.layers import Dense, Activation, Dropout, ActivityRegularization
-from keras.callbacks import EarlyStopping
-from keras.regularizers import l2, activity_l2, l1
+import xgboost as xgb
 
 # Parameters
-features = NEURAL_NET
+features = EXTENDED
 
 # Read data
 train = pd.read_csv('data/train_%s.csv' % features)
 
 # Get X and y
-X = train.drop(['casual', 'registered', 'count',
-                'month', 'day', 'season', 'weekday',  # 'season_ordered', 'hour',
-                'weather', 'humidity_inv', 'windspeed_inv',
-                ], inplace=False, axis=1)
+X = train.drop([CASUAL, REGISTERED, COUNT], inplace=False, axis=1)
 y = train[[CASUAL, REGISTERED, COUNT]]
 
-# Define different targets
+# Define targets
 targets = [CASUAL, REGISTERED]
-y_pred_all = {CASUAL: np.zeros(y.shape[0]), REGISTERED: np.zeros(y.shape[0])}
 
 # Read predictions from previous models
-models = ['rf_extended', 'xgb_extended', 'keras_neuralnet']
+models_stacking = ['rf_extended', 'xgb_extended', 'keras_neuralnet']
 predictions_to_stack = pd.DataFrame()
-for model in models:
-    predictions_model = pd.read_csv('cross-validation/%s.csv' % model)
+for model_stacking in models_stacking:
+    predictions_model = pd.read_csv('cross-validation/%s.csv' % model_stacking)
     for target in targets:
-        predictions_to_stack[(model, target)] = predictions_model[target]
+        predictions_to_stack[(model_stacking, target)] = predictions_model[target]
 
 # CV
 n_folds = 10
 rmsle_fold = np.zeros(n_folds)
+best_round_casual = np.zeros(n_folds)
+best_round_registered = np.zeros(n_folds)
 skf = KFold(y.shape[0], n_folds, shuffle=True, random_state=0)
 i = 0
 for train, test in skf:
@@ -45,46 +36,41 @@ for train, test in skf:
     stacking_train, stacking_test = predictions_to_stack.loc[train], predictions_to_stack.loc[test]
 
     # Work with targets
+    model = {}
     y_pred = np.zeros(X_test.shape[0])
     best_epoch = np.zeros(n_folds)
     for target in targets:
         X_train_target, X_test_target = X_train.copy(), X_test.copy()
-        for model in models:
-            X_train_target[(model, target)] = stacking_train[(model, target)]
-            X_test_target[(model, target)] = stacking_test[(model, target)]
+        # X_train_target, X_test_target = pd.DataFrame(), pd.DataFrame()
+        for model_stacking in models_stacking:
+            X_train_target[(model_stacking, target)] = stacking_train[(model_stacking, target)]
+            X_test_target[(model_stacking, target)] = stacking_test[(model_stacking, target)]
 
-        # Scale data
-        scaler = preprocessing.StandardScaler()
-        X_train_target = scaler.fit_transform(X_train_target)
-        X_test_target = scaler.transform(X_test_target)
-
-        # Define neural network
-        model = Sequential()
-        model.add(Dense(200, input_dim=X_train_target.shape[1]))
-        model.add(Activation('relu'))
-        model.add(Dropout(0.1))
-        model.add(Dense(200))  # , W_regularizer=l2(0.0001), activity_regularizer=activity_l2(0.01)))
-        model.add(Activation('relu'))
-        model.add(Dropout(0.1))
-        model.add(Dense(1))
-        model.compile(loss='mean_squared_logarithmic_error', optimizer='rmsprop')
+        # XGBoost matrices
+        xg_train = xgb.DMatrix(X_train_target, label=y_train[target])
+        xg_test = xgb.DMatrix(X_test_target, label=y_test[target])
 
         # Train
-        early_stopping = EarlyStopping(monitor='val_loss', patience=8, verbose=0)
-        history = model.fit(X_train_target, y_train[target], validation_data=(X_test_target, y_test[target]),
-                            shuffle=True, callbacks=[early_stopping], nb_epoch=160, batch_size=16)
+        param = {'silent': 1, 'nthread': 8, 'objective': 'reg:linear',
+                 'eta': 0.01, 'max_depth': 10, 'min_child_weight': 2, 'colsample_bytree': 1,
+                 'subsample': 0.5, 'gamma': 0, 'alpha': 2, 'lambda': 2, 'lambda_bias': 0}
+        n_rounds = 2000
+        model[target] = xgb.train(param, xg_train, n_rounds, [(xg_train, 'train'), (xg_test, 'test')],
+                                  feval=rmsle_evalerror, early_stopping_rounds=60)
 
-        # Predict, reshape and clip values
-        y_pred_target = model.predict(X_test_target).reshape(X_test_target.shape[0]).clip(min=0)
+        # Predict and clip values
+        y_pred_target = model[target].predict(xg_test).clip(min=0)
         y_pred += y_pred_target
-
-        # Save predictions
-        y_pred_all[target][test] = y_pred_target
 
     # Evaluate
     rmsle_fold[i] = rmsle(y_test['count'], y_pred)
-    print 'Fold %d/%d, RMSLE = %f' % (i + 1, n_folds, rmsle_fold[i])
+    best_round_casual[i] = model[CASUAL].best_iteration
+    best_round_registered[i] = model[REGISTERED].best_iteration
+    print 'Fold %d/%d, RMSLE = %f, best it. = %d, %d' % (
+        i + 1, n_folds, rmsle_fold[i], model[CASUAL].best_iteration, model[REGISTERED].best_iteration)
     i += 1
 
 # Show results
-print 'RMSLE mean = %f, ' % rmsle_fold.mean()
+print best_round_casual, best_round_registered
+print 'mean RMSLE = %f, ' % rmsle_fold.mean()
+print 'mean best it. = %f, %f' % (best_round_casual.mean(), best_round_registered.mean())
