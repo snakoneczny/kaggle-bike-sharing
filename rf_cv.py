@@ -12,6 +12,9 @@ train = pd.read_csv('data/train_%s.csv' % features)
 X = train.drop([CASUAL, REGISTERED, COUNT], inplace=False, axis=1)
 y = train[[CASUAL, REGISTERED, COUNT]]
 
+# Transform y
+y_log = np.log(y + 1)
+
 # Define targets
 targets = [CASUAL, REGISTERED]
 y_pred_all = {CASUAL: np.zeros(y.shape[0]), REGISTERED: np.zeros(y.shape[0])}
@@ -24,17 +27,23 @@ i = 0
 for train, test in skf:
     X_train, X_test = X.loc[train, :], X.loc[test, :]
     y_train, y_test = y.loc[train], y.loc[test]
+    y_log_train, y_log_test = y_log.loc[train], y_log.loc[test]
 
     # Work with targets
     y_pred = np.zeros(X_test.shape[0])
     for target in targets:
         # Train
-        rf = RandomForestRegressor(random_state=0, n_jobs=8, n_estimators=100, max_features=None,
+        rf = RandomForestRegressor(random_state=0, n_jobs=8, n_estimators=400, max_features=None,
                                    max_depth=None, min_samples_split=1)
-        rf.fit(X_train, y_train[target])
+        rf.fit(X_train, y_log_train[target])
 
         # Predict and clip values
         y_pred_target = rf.predict(X_test).clip(min=0)
+
+        # Transform results
+        y_pred_target = np.exp(y_pred_target) - 1
+
+        # Add target predictions
         y_pred += y_pred_target
 
         # Save predictions

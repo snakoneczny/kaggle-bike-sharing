@@ -21,6 +21,9 @@ X = train.drop(['casual', 'registered', 'count',
                 ], inplace=False, axis=1)
 y = train[[CASUAL, REGISTERED, COUNT]]
 
+# Transform y
+# y_log = np.log(y + 1)
+
 # Define targets
 targets = [CASUAL, REGISTERED]
 y_pred_all = {CASUAL: np.zeros(y.shape[0]), REGISTERED: np.zeros(y.shape[0])}
@@ -33,6 +36,7 @@ i = 0
 for train, test in skf:
     X_train, X_test = X.loc[train, :], X.loc[test, :]
     y_train, y_test = y.loc[train], y.loc[test]
+    # y_log_train, y_log_test = y_log.loc[train], y_log.loc[test]
 
     # Scale data
     scaler = preprocessing.StandardScaler()
@@ -45,6 +49,8 @@ for train, test in skf:
     for target in targets:
         y_train_target = y_train[target].as_matrix()
         y_test_target = y_test[target].as_matrix()
+        # y_log_train_target = y_log_train[target].as_matrix()
+        # y_log_test_target = y_log_test[target].as_matrix()
 
         # Define neural network
         model = Sequential()
@@ -64,6 +70,11 @@ for train, test in skf:
 
         # Predict, reshape and clip values
         y_pred_target = model.predict(X_test).reshape(X_test.shape[0]).clip(min=0)
+
+        # Transform results
+        # y_pred_target = np.exp(y_pred_target) - 1
+
+        # Add target predictions
         y_pred += y_pred_target
 
         # Save predictions

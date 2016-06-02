@@ -1,7 +1,6 @@
 # Data
-data/
-submissions/
-cross-validation/
+*.csv
+*.png
 
 # Pycharm
 .idea/

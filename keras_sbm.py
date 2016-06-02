@@ -23,6 +23,9 @@ X_test = test.drop(['month', 'day', 'season', 'weekday',
                     ], inplace=False, axis=1)
 y_train = train[[CASUAL, REGISTERED]]
 
+# Transform y
+# y_log_train = np.log(y_train + 1)
+
 # Scale data
 scaler = preprocessing.StandardScaler()
 X_train = scaler.fit_transform(X_train)
@@ -35,6 +38,7 @@ y_pred = {COUNT: np.zeros(X_test.shape[0]), CASUAL: np.zeros(X_test.shape[0]), R
 # Work with targets
 for target in targets:
     y_train_target = y_train[target].as_matrix()
+    # y_log_train_target = y_log_train[target].as_matrix()
 
     # Define neural network
     model = Sequential()
@@ -50,8 +54,9 @@ for target in targets:
     # Train
     model.fit(X_train, y_train_target, shuffle=True, nb_epoch=50, batch_size=16)
 
-    # Predict, reshape and clip values
+    # Predict
     y_pred[target] = model.predict(X_test).reshape(X_test.shape[0]).clip(min=0)
+    # y_pred[target] = np.exp(y_pred[target]) - 1
     y_pred[COUNT] += y_pred[target]
 
 # Write submission

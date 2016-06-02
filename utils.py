@@ -37,7 +37,7 @@ def write_results_extended(y_pred, results_file, date_file):
 def sle_obj(preds, dtrain):
     labels = dtrain.get_label()
     grad = 2 * np.divide(np.log(preds + 1) - np.log(labels + 1), preds + 1)
-    hess = 2 * np.divide(1 - np.log(preds + 1) + np.log(labels + 1), np.power(preds + 1, 2))
+    hess = 4 * np.divide(1 - np.log(preds + 1) + np.log(labels + 1), np.power(preds + 1, 2))
     return grad, hess
 
 
