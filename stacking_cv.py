@@ -1,6 +1,12 @@
 from utils import *
 from sklearn.cross_validation import KFold
 import xgboost as xgb
+# np.random.seed(1227)
+#
+# from sklearn import preprocessing
+# from keras.models import Sequential
+# from keras.layers import Dense, Activation, Dropout
+# from keras.callbacks import EarlyStopping
 
 # Parameters
 features = EXTENDED
@@ -63,8 +69,8 @@ for train, test in skf:
         #          'subsample': 0.5, 'gamma': 0, 'alpha': 12, 'lambda': 12, 'lambda_bias': 0}
         # Stacking predictions obtained with log and predicting log values
         param = {'silent': 1, 'nthread': 8, 'objective': 'reg:linear',
-                 'eta': 0.01, 'max_depth': 6, 'min_child_weight': 1, 'colsample_bytree': 1,
-                 'subsample': 0.5, 'gamma': 0, 'alpha': 1, 'lambda': 1, 'lambda_bias': 0}
+                 'eta': 0.01, 'max_depth': 8, 'min_child_weight': 1, 'colsample_bytree': 1,
+                 'subsample': 0.5, 'gamma': 0, 'alpha': 1, 'lambda': 2, 'lambda_bias': 0}
 
         n_rounds = 10000
         model[target] = xgb.train(param, xg_train, n_rounds, [(xg_train, 'train'), (xg_test, 'test')],
@@ -73,6 +79,30 @@ for train, test in skf:
 
         # Predict and clip values
         y_pred_target = model[target].predict(xg_test).clip(min=0)
+
+        # # Scale data
+        # scaler = preprocessing.StandardScaler()
+        # X_train_target = scaler.fit_transform(X_train_target)
+        # X_test_target = scaler.transform(X_test_target)
+        #
+        # # Define neural network
+        # model = Sequential()
+        # model.add(Dense(200, input_dim=X_train_target.shape[1]))
+        # model.add(Activation('relu'))
+        # model.add(Dropout(0.1))
+        # model.add(Dense(200))
+        # model.add(Activation('relu'))
+        # model.add(Dropout(0.1))
+        # model.add(Dense(1))
+        # model.compile(loss='mean_squared_logarithmic_error', optimizer='rmsprop')
+        #
+        # # Train
+        # early_stopping = EarlyStopping(monitor='val_loss', patience=8, verbose=0)
+        # model.fit(X_train_target, y_train[target], validation_data=(X_test_target, y_test[target]), shuffle=True,
+        #           callbacks=[early_stopping], nb_epoch=160, batch_size=16)
+
+        # Predict, reshape and clip values
+        # y_pred_target = model.predict(X_test_target).reshape(X_test_target.shape[0]).clip(min=0)
 
         # Transform results
         y_pred_target = np.exp(y_pred_target) - 1
@@ -87,6 +117,7 @@ for train, test in skf:
     rmsle_fold[i] = rmsle(y_test[COUNT], y_pred)
     print 'Fold %d/%d, RMSLE = %f, best it. = %d, %d' % (
         i + 1, n_folds, rmsle_fold[i], best_round[CASUAL][i], best_round[REGISTERED][i])
+    # print 'Fold %d/%d, RMSLE = %f' % (i + 1, n_folds, rmsle_fold[i])
     i += 1
 
 # Show results

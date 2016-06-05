@@ -1,5 +1,10 @@
 from utils import *
 import xgboost as xgb
+# np.random.seed(1227)
+#
+# from sklearn import preprocessing
+# from keras.models import Sequential
+# from keras.layers import Dense, Activation, Dropout
 
 # Parameters
 features = EXTENDED
@@ -21,7 +26,8 @@ targets = [CASUAL, REGISTERED]
 y_pred = {COUNT: np.zeros(X_test.shape[0]), CASUAL: np.zeros(X_test.shape[0]),
           REGISTERED: np.zeros(X_test.shape[0])}
 # n_rounds = {CASUAL: 260, REGISTERED: 360}
-n_rounds = {CASUAL: 450, REGISTERED: 560}
+# n_rounds = {CASUAL: 450, REGISTERED: 560}
+n_rounds = {CASUAL: 710, REGISTERED: 780}
 
 # Read predictions from previous models
 models = ['rf_extended', 'xgb_extended', 'keras_neuralnet']
@@ -36,7 +42,8 @@ for model in models:
 
 # Work with targets
 for target in targets:
-    X_train_target, X_test_target = X_train.copy(), X_test.copy()
+    # X_train_target, X_test_target = X_train.copy(), X_test.copy()
+    X_train_target, X_test_target = pd.DataFrame(), pd.DataFrame()
     for model in models:
         X_train_target[(model, target)] = predictions_cv[(model, target)]
         X_test_target[(model, target)] = predictions_sbm[(model, target)]
@@ -47,12 +54,32 @@ for target in targets:
 
     # Train
     param = {'silent': 1, 'nthread': 8, 'objective': 'reg:linear',
-             'eta': 0.01, 'max_depth': 6, 'min_child_weight': 1, 'colsample_bytree': 1,
-             'subsample': 0.5, 'gamma': 0, 'alpha': 1, 'lambda': 1, 'lambda_bias': 0}
+             'eta': 0.01, 'max_depth': 2, 'min_child_weight': 1, 'colsample_bytree': 1,
+             'subsample': 0.5, 'gamma': 0, 'alpha': 1, 'lambda': 2, 'lambda_bias': 0}
     model = xgb.train(param, xg_train, n_rounds[target], [(xg_train, 'train')])  # , feval=rmsle_evalerror)
+
+    # # Scale data
+    # scaler = preprocessing.StandardScaler()
+    # X_train_target = scaler.fit_transform(X_train_target)
+    # X_test_target = scaler.transform(X_test_target)
+    #
+    # # Define neural network
+    # model = Sequential()
+    # model.add(Dense(200, input_dim=X_train_target.shape[1]))
+    # model.add(Activation('relu'))
+    # model.add(Dropout(0.1))
+    # model.add(Dense(200))
+    # model.add(Activation('relu'))
+    # model.add(Dropout(0.1))
+    # model.add(Dense(1))
+    # model.compile(loss='mean_squared_logarithmic_error', optimizer='rmsprop')
+    #
+    # # Train
+    # model.fit(X_train_target, y_train[target], shuffle=True, nb_epoch=50, batch_size=16)
 
     # Predict
     y_pred[target] = model.predict(xg_test).clip(min=0)
+    # y_pred[target] = model.predict(X_test_target).reshape(X_test_target.shape[0]).clip(min=0)
     y_pred[target] = np.exp(y_pred[target]) - 1
     y_pred[COUNT] += y_pred[target]
 
